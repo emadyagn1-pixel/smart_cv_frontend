@@ -1,0 +1,53 @@
+/* Print Styles for CV Export */
+@media print {
+  /* Hide everything except CV */
+  body * {
+    visibility: hidden;
+  }
+  
+  #cv-display,
+  #cv-display * {
+    visibility: visible;
+  }
+  
+  #cv-display {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+  
+  /* Hide buttons and navigation */
+  button,
+  .no-print {
+    display: none !important;
+  }
+  
+  /* Optimize for print */
+  @page {
+    margin: 1cm;
+    size: A4;
+  }
+  
+  /* Remove backgrounds for better printing */
+  * {
+    background: white !important;
+    color: black !important;
+  }
+  
+  /* Keep borders and shadows minimal */
+  .card,
+  .border {
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+  }
+  
+  /* Ensure proper page breaks */
+  section {
+    page-break-inside: avoid;
+  }
+  
+  h1, h2, h3 {
+    page-break-after: avoid;
+  }
+}
