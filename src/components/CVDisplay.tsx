@@ -1,3 +1,4 @@
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Mail, Phone, MapPin, Briefcase, GraduationCap, Code, Globe, Heart } from "lucide-react";
@@ -104,6 +105,9 @@ export default function CVDisplay({ cv, templateId = "blue" }: CVDisplayProps) {
                     backgroundColor: colors.background,
                     color: colors.primary,
                     borderColor: colors.border,
+                    marginRight: '8px',
+                    marginBottom: '8px',
+                    display: 'inline-block'
                   }}
                 >
                   {skill}
@@ -258,6 +262,9 @@ export default function CVDisplay({ cv, templateId = "blue" }: CVDisplayProps) {
                   style={{ 
                     borderColor: colors.border,
                     color: colors.primary,
+                    marginRight: '8px',
+                    marginBottom: '8px',
+                    display: 'inline-block'
                   }}
                 >
                   {hobby}
