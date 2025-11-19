@@ -20,7 +20,10 @@ import EducationForm from "@/components/EducationForm";
 import SkillsAndAboutForm from "@/components/SkillsAndAboutForm";
 import SubscriptionBanner from "@/components/SubscriptionBanner";
 import PricingModal from "@/components/PricingModal";
+import CVSidebar from "@/components/CVSidebar";
+import LanguageSelector from "@/components/LanguageSelector";
 import { ManualCVForm } from "@/types/manualForm";
+import { translateCV } from "@/lib/translateCV";
 
 type Language = "en" | "de" | "ar";
 
@@ -96,6 +99,33 @@ export default function Home() {
   const [selectedTemplate, setSelectedTemplate] = useState("blue");
   const [workDates, setWorkDates] = useState({ startDate: "", endDate: "" });
   const [showPricingModal, setShowPricingModal] = useState(false);
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translatedCV, setTranslatedCV] = useState<any>(null);
+
+  const handleLanguageChange = async (newLanguage: string) => {
+    if (!result) return;
+    
+    setSelectedLanguage(newLanguage as Language);
+    
+    // If changing to English, use original CV
+    if (newLanguage === "en") {
+      setTranslatedCV(null);
+      return;
+    }
+    
+    // Translate CV to new language
+    setIsTranslating(true);
+    try {
+      const translated = await translateCV(result.final_cv, newLanguage);
+      setTranslatedCV(translated);
+      toast.success(`CV translated to ${newLanguage.toUpperCase()}`);
+    } catch (error) {
+      console.error("Translation error:", error);
+      toast.error("Failed to translate CV");
+    } finally {
+      setIsTranslating(false);
+    }
+  };
 
   const exportToPDF = async () => {
     const cvElement = document.getElementById("cv-display");
@@ -247,6 +277,9 @@ export default function Home() {
         formData.append("cv_file", selectedFile);
       }
 
+      // Always request English output from Backend
+      formData.append("output_language", "en");
+
       // API request
       toast.info("Analyzing your CV... This may take up to 60 seconds on first request.");
 
@@ -272,6 +305,10 @@ export default function Home() {
 
       const data: CVResult = await response.json();
       setResult(data);
+
+      // إعادة تعيين اللغة للإنجليزية بعد التحليل
+      setSelectedLanguage("en");
+      setTranslatedCV(null);
 
       toast.success("CV analyzed successfully!");
     } catch (error: any) {
@@ -306,31 +343,11 @@ export default function Home() {
             <CardHeader>
               <CardTitle>Upload Your CV</CardTitle>
               <CardDescription>
-                Upload your resume in PDF or DOCX format and select your preferred output language
+                Upload your resume in PDF or DOCX format for AI-powered analysis
               </CardDescription>
             </CardHeader>
 
             <CardContent className="space-y-6">
-
-              {/* Language Selector */}
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-slate-700">Output Language</label>
-
-                <Select
-                  value={selectedLanguage}
-                  onValueChange={(value) => setSelectedLanguage(value as Language)}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select language" />
-                  </SelectTrigger>
-
-                  <SelectContent>
-                    <SelectItem value="en">🇬🇧 English</SelectItem>
-                    <SelectItem value="de">🇩🇪 German</SelectItem>
-                    <SelectItem value="ar">🇸🇦 Arabic</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
 
               {/* Input Method */}
               <div className="space-y-2">
@@ -524,7 +541,9 @@ export default function Home() {
           <div className="space-y-6">
 
             {/* ACTION BUTTONS */}
-            <div className="flex gap-3 mb-6 no-print">
+            <div className="flex gap-3 mb-6 no-print items-center justify-between">
+              
+              <div className="flex gap-3">
 
               {/* Analyze Another CV */}
               <Button
@@ -581,26 +600,52 @@ export default function Home() {
                 <Type className="w-4 h-4 mr-2" />
                 Print CV
               </Button>
-            </div>
-
-            {/* CV DISPLAY */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-              {/* CV MAIN (2 columns) */}
-              <div className="lg:col-span-2">
-                <div id="cv-display">
-                  <CVDisplay cv={result.final_cv} templateId={selectedTemplate} />
-                </div>
               </div>
 
-              {/* Right Column */}
-              <div className="lg:col-span-1 no-print">
-                <AssessmentBox
-                  improvements={result.improvements_summary}
-                  career={result.career_recommendation}
-                  quality={result.quality_report}
-                  ats={result.ats_compliance}
-                />
+              {/* Language Selector */}
+              <LanguageSelector
+                selectedLanguage={selectedLanguage}
+                onLanguageChange={handleLanguageChange}
+              />
+
+              {/* Translation Loading Indicator */}
+              {isTranslating && (
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Translating CV...</span>
+                </div>
+              )}
+
+            </div>
+
+            {/* CV DISPLAY WITH SIDEBAR */}
+            <div className="flex gap-6">
+              
+              {/* LEFT SIDEBAR */}
+              <div className="flex-shrink-0">
+                <CVSidebar cv={result.final_cv} />
+              </div>
+
+              {/* MAIN CONTENT */}
+              <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                {/* CV DISPLAY (2 columns) */}
+                <div className="lg:col-span-2">
+                  <div id="cv-display">
+                    <CVDisplay cv={translatedCV || result.final_cv} templateId={selectedTemplate} outputLanguage={selectedLanguage} />
+                  </div>
+                </div>
+
+                {/* RIGHT COLUMN - Assessment */}
+                <div className="lg:col-span-1 no-print">
+                  <AssessmentBox
+                    improvements={result.improvements_summary}
+                    career={result.career_recommendation}
+                    quality={result.quality_report}
+                    ats={result.ats_compliance}
+                  />
+                </div>
+
               </div>
 
             </div>
